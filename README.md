@@ -464,7 +464,3 @@ As defined in the original architecture plan, these features are explicitly out 
 | **Community & shared roadmaps** | The `RoadmapSkeletonDto` + `DayDto` structure is serializable and shareable |
 
 ---
-
-## License
-
-MIT License — Copyright (c) 2026 Learning Companion
