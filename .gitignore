@@ -1,0 +1,23 @@
+# Built-in Android Studio / Intellij project files
+.idea/
+*.iml
+.gradle/
+build/
+app/build/
+local.properties
+
+# Log files
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Gradle build cache/generated properties
+.navigation/
+captures/
+.externalNativeBuild/
+.cxx/
+sinks/
+
+
