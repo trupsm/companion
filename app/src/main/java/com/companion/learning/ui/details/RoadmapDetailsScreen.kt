@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material3.*
@@ -26,7 +27,7 @@ import com.companion.learning.data.local.entity.MilestoneEntity
 @Composable
 fun RoadmapDetailsScreen(
     onNavigateBack: () -> Unit,
-    onTopicClick: (String) -> Unit,
+    onTopicClick: (topicId: String, roadmapGoal: String) -> Unit,
     viewModel: RoadmapDetailsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -45,6 +46,11 @@ fun RoadmapDetailsScreen(
             editTitle = it.title
             editGoal = it.goal
         }
+    }
+
+    // Trigger lazy expansion when tab selection changes
+    LaunchedEffect(selectedTab, uiState.milestones) {
+        viewModel.checkAndExpandMilestone(selectedTab)
     }
 
     if (showDeleteDialog) {
@@ -116,6 +122,25 @@ fun RoadmapDetailsScreen(
                             Icon(Icons.Default.MoreVert, contentDescription = "Actions")
                         }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                            if (uiState.roadmap?.status == "ACTIVE") {
+                                DropdownMenuItem(
+                                    text = { Text("Pause Learning") },
+                                    leadingIcon = { Icon(Icons.Default.Pause, contentDescription = null) },
+                                    onClick = {
+                                        showMenu = false
+                                        viewModel.pauseRoadmap()
+                                    }
+                                )
+                            } else if (uiState.roadmap?.status == "PAUSED") {
+                                DropdownMenuItem(
+                                    text = { Text("Resume Learning") },
+                                    leadingIcon = { Icon(Icons.Default.PlayArrow, contentDescription = null) },
+                                    onClick = {
+                                        showMenu = false
+                                        viewModel.resumeRoadmap()
+                                    }
+                                )
+                            }
                             DropdownMenuItem(
                                 text = { Text("Edit Details") },
                                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
@@ -187,6 +212,33 @@ fun RoadmapDetailsScreen(
                         }
                     }
 
+                    // Resume Roadmap Overlay if PAUSED
+                    if (roadmap.status == "PAUSED") {
+                        Surface(
+                            color = MaterialTheme.colorScheme.tertiaryContainer,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Roadmap Paused", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                                    Text("Resume this roadmap to continue scheduling daily tasks on your Dashboard calendar.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f))
+                                }
+                                Button(
+                                    onClick = { viewModel.resumeRoadmap() },
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
+                                ) {
+                                    Icon(Icons.Default.PlayArrow, contentDescription = null)
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Resume")
+                                }
+                            }
+                        }
+                    }
+
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
                             text = "Goal: ${roadmap.goal}",
@@ -242,22 +294,65 @@ fun RoadmapDetailsScreen(
                                 )
                             }
 
-                            if (filteredTasks.isEmpty()) {
-                                item {
-                                    Text(
-                                        text = "No topics generated for this week yet.",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            } else {
-                                items(filteredTasks) { task ->
-                                    TopicItemCard(
-                                        task = task,
-                                        onClick = { onTopicClick(task.id) }
-                                    )
-                                }
-                            }
+                             if (filteredTasks.isEmpty()) {
+                                 if (uiState.isExpanding || activeMilestone.expansionStatus == "EXPANDING") {
+                                     item {
+                                         Box(
+                                             modifier = Modifier.fillMaxWidth().height(180.dp),
+                                             contentAlignment = Alignment.Center
+                                         ) {
+                                             Column(
+                                                 horizontalAlignment = Alignment.CenterHorizontally,
+                                                 verticalArrangement = Arrangement.spacedBy(8.dp)
+                                             ) {
+                                                 CircularProgressIndicator()
+                                                 Text(
+                                                     "Generating Week ${activeMilestone.weekNumber} study topics...",
+                                                     style = MaterialTheme.typography.bodyMedium,
+                                                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                 )
+                                             }
+                                         }
+                                     }
+                                 } else if (uiState.expansionError != null) {
+                                     item {
+                                         val errorMsg = uiState.expansionError.orEmpty()
+                                         Card(
+                                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                                             modifier = Modifier.fillMaxWidth()
+                                         ) {
+                                             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                 Text(
+                                                     text = errorMsg,
+                                                     color = MaterialTheme.colorScheme.onErrorContainer,
+                                                     style = MaterialTheme.typography.bodyMedium
+                                                 )
+                                                 Button(
+                                                     onClick = { viewModel.checkAndExpandMilestone(selectedTab) },
+                                                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                                                 ) {
+                                                     Text("Retry Generation")
+                                                 }
+                                             }
+                                         }
+                                     }
+                                 } else {
+                                     item {
+                                         Text(
+                                             text = "No topics generated for this week yet.",
+                                             style = MaterialTheme.typography.bodyMedium,
+                                             color = MaterialTheme.colorScheme.onSurfaceVariant
+                                         )
+                                     }
+                                 }
+                             } else {
+                                 items(filteredTasks) { task ->
+                                     TopicItemCard(
+                                         task = task,
+                                         onClick = { onTopicClick(task.id, roadmap.goal) }
+                                     )
+                                 }
+                             }
                         }
                     } else {
                         Box(

@@ -37,6 +37,38 @@ class RoadmapRepositoryImpl @Inject constructor(
     }
 
     override suspend fun startRoadmap(id: String, startedAt: Long) {
-        roadmapDao.updateRoadmapLifecycle(id, "ACTIVE", startedAt)
+        roadmapDao.updateRoadmapLifecycle(id, "ACTIVE", startedAt, null)
+    }
+
+    override suspend fun pauseRoadmap(id: String) {
+        val roadmap = roadmapDao.getRoadmapById(id) ?: return
+        if (roadmap.status == "ACTIVE") {
+            val now = System.currentTimeMillis()
+            roadmapDao.updateRoadmapLifecycle(
+                id = id,
+                status = "PAUSED",
+                startedAt = roadmap.startedAt,
+                pausedAt = now
+            )
+        }
+    }
+
+    override suspend fun resumeRoadmap(id: String) {
+        val roadmap = roadmapDao.getRoadmapById(id) ?: return
+        if (roadmap.status == "PAUSED" && roadmap.pausedAt != null && roadmap.startedAt != null) {
+            val now = System.currentTimeMillis()
+            val pauseDurationMs = now - roadmap.pausedAt
+            val newStartedAt = roadmap.startedAt + pauseDurationMs
+            roadmapDao.updateRoadmapLifecycle(
+                id = id,
+                status = "ACTIVE",
+                startedAt = newStartedAt,
+                pausedAt = null
+            )
+        }
+    }
+
+    override suspend fun updateMilestoneExpansionStatus(milestoneId: String, status: String) {
+        roadmapDao.updateMilestoneStatus(milestoneId, status)
     }
 }

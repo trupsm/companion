@@ -29,4 +29,12 @@ class CurriculumRepositoryImpl @Inject constructor(
     override suspend fun updateCurriculumItemStatus(id: String, status: String) {
         curriculumDao.updateCurriculumItemStatus(id, status)
     }
+
+    override suspend fun markTopicInProgress(id: String) {
+        // Only transition NOT_STARTED → IN_PROGRESS; never overwrite COMPLETED or SKIPPED
+        val current = curriculumDao.getCurriculumItemById(id)
+        if (current?.status == "NOT_STARTED") {
+            curriculumDao.updateCurriculumItemStatus(id, "IN_PROGRESS")
+        }
+    }
 }

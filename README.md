@@ -29,6 +29,8 @@
 
 Every roadmap is broken into **weekly milestones** and **daily curriculum items**, each of which can be tracked, marked complete, and reviewed on a per-day calendar on the Dashboard.
 
+**Robust Demo Mode**: The app features a transparent fallback mechanism. If the Gemini API key is missing, invalid, or encounters rate limits (HTTP 429), it automatically generates realistic mock roadmaps, curriculum expansions, quizzes, and resources. This ensures the app is fully demonstrable and functional under any network or quota conditions.
+
 ---
 
 ## Features
@@ -41,9 +43,10 @@ Every roadmap is broken into **weekly milestones** and **daily curriculum items*
 
 ### 🗺️ Roadmap Management
 - **AI Generation** — Describe your goal, pick duration and experience level, and Gemini generates a week-by-week skeleton roadmap.
-- **File Import** — Upload a `.txt` file. The built-in parser handles `=== WEEK N ===` headers and `Day N:` entries, supporting line-wrapped text and multiple days per line.
+- **Fail-safe Fallback** — Automatically falls back to high-quality, realistic mock data for generation, expansions, quizzes, and resources if the API key is missing or encounters HTTP 429 rate limits.
+- **File Import** — Upload a `.txt` file **or paste raw text** into the import screen. Both paths are standardized by Gemini into a structured week/day skeleton, so any well-formatted plain-text roadmap is supported.
 - **Hours Validation** — When creating a roadmap, hours/day for that course plus all existing active course hours must not exceed your global daily study budget (set in Settings).
-- **Start Scheduling** — New roadmaps default to `NOT_YET_STARTED`. Tap **Start Roadmap** on the details screen to activate calendar scheduling from today.
+- **Start/Pause/Resume** — New roadmaps default to `NOT_YET_STARTED`. Start to activate them. Pausing hides tasks from the dashboard, and resuming shifts the calendar timeline forward by the pause duration automatically.
 - **Edit** — Update title and learning goal at any time via the Actions menu (⋮).
 - **Delete** — Remove a roadmap and all its milestones and daily tasks via a confirmation dialog.
 
@@ -52,6 +55,9 @@ Every roadmap is broken into **weekly milestones** and **daily curriculum items*
 - Horizontal calendar: tap any date to see scheduled tasks.
 - Tasks are calculated from the roadmap's `startedAt` date — only `ACTIVE` roadmaps appear.
 - Task completion status is reflected (completed tasks shown with a check icon).
+- **Calendar indicators**: dots on calendar dates that have pending tasks.
+- **Analytics cards**: Overall completion percentage and progress bar per active course.
+- **Day-level completion bars**: Visual progress bar inside each task card showing day completion ratio.
 
 ### 📖 Roadmap Details
 - Week-by-week **tab navigation** (Week 1, Week 2, ...).
@@ -68,6 +74,7 @@ Every roadmap is broken into **weekly milestones** and **daily curriculum items*
 - Add multiple notes per study session or topic.
 - Each note has an optional title and full content area.
 - Notes are saved to the database — they persist across sessions and app restarts.
+- Notes can be **edited** — tapping any saved note pre-fills the editor dialog for updates.
 - Notes can be deleted individually.
 - Grouped by date (today's notes) or by topic when opened from a curriculum item.
 
@@ -82,13 +89,14 @@ Every roadmap is broken into **weekly milestones** and **daily curriculum items*
 | Screen | Description |
 |---|---|
 | **Auth Screen** | Tabbed Login / Sign Up with password visibility toggle |
-| **Dashboard** | Calendar + Today's Tasks with user greeting |
+| **Dashboard** | Calendar + Today's Tasks with analytics cards and completion indicators |
 | **Roadmaps (Home)** | List of all roadmaps with status badges |
 | **Create Roadmap** | AI-powered goal input form |
-| **Import Roadmap** | Upload `.txt` file with roadmap structure |
-| **Roadmap Details** | Week tabs, milestone cards, daily topic list, Start/Edit/Delete |
-| **Topic Detail** | Full topic view, status, Mark as Complete button |
-| **Notes** | Saved notes list with add-dialog FAB and per-note delete |
+| **Import Roadmap** | Tabbed: Upload `.txt` file **or** Paste raw text — both AI-standardized |
+| **Roadmap Details** | Week tabs, milestone cards, daily topic list, lazy Gemini expansion, Start/Edit/Delete/Pause/Resume |
+| **Topic Detail** | Topic view with IN_PROGRESS badge, AI resource chips (open in browser), Mark as Complete |
+| **Quiz** | 5-question MCQ quiz per topic with colour-coded feedback, score screen, retake |
+| **Notes** | Saved notes list with add/edit-dialog FAB and per-note delete |
 | **Settings** | API key, study hours |
 
 ---
@@ -154,18 +162,20 @@ app/src/main/java/com/companion/learning/
 │   │   │   ├── RoadmapDao.kt        # Roadmap + milestone CRUD, start/edit/delete
 │   │   │   ├── CurriculumDao.kt     # Daily topics CRUD + status update
 │   │   │   ├── NoteDao.kt           # Notes: insert, query by date/topic, delete
+│   │   │   ├── QuizDao.kt           # Quiz: insert, query, existence checks
 │   │   │   └── UserDao.kt           # User authentication queries
 │   │   ├── entity/
 │   │   │   ├── RoadmapEntity.kt     # id, title, goal, hoursPerDay, startedAt, status...
 │   │   │   ├── MilestoneEntity.kt   # Weekly milestones
 │   │   │   ├── CurriculumItemEntity.kt  # Daily topics with status
 │   │   │   ├── NoteEntity.kt        # Notes with dayDate + optional curriculumItemId
+│   │   │   ├── QuizQuestionEntity.kt # Quiz questions for curriculum items
 │   │   │   ├── UserEntity.kt        # User credentials (hash + salt)
-│   │   │   └── ...                  # Quizzes, Streaks, Reviews
+│   │   │   └── ...                  # Streaks, Reviews
 │   │   ├── security/
 │   │   │   ├── SecureStorage.kt     # EncryptedSharedPreferences wrapper
 │   │   │   └── PasswordHasher.kt    # SHA-256 + Base64 salt utility
-│   │   └── LearningDatabase.kt      # Room @Database (version 1)
+│   │   └── LearningDatabase.kt      # Room @Database (version 3)
 │   │
 │   ├── remote/
 │   │   ├── GeminiProvider.kt        # Gemini 1.5 Flash REST API call + JSON parse
@@ -178,7 +188,8 @@ app/src/main/java/com/companion/learning/
 │   │
 │   ├── repository/
 │   │   ├── RoadmapRepositoryImpl.kt
-│   │   └── CurriculumRepositoryImpl.kt
+│   │   ├── CurriculumRepositoryImpl.kt
+│   │   └── QuizRepositoryImpl.kt
 │   │
 │   └── mock/
 │       └── SeedData.kt              # Sample data for development
@@ -186,7 +197,8 @@ app/src/main/java/com/companion/learning/
 ├── domain/
 │   ├── repository/
 │   │   ├── RoadmapRepository.kt
-│   │   └── CurriculumRepository.kt
+│   │   ├── CurriculumRepository.kt
+│   │   └── QuizRepository.kt
 │   └── provider/
 │       └── LlmProvider.kt
 │
@@ -201,12 +213,13 @@ app/src/main/java/com/companion/learning/
     ├── auth/                        # Login + SignUp screens
     ├── dashboard/                   # Calendar + Today's Tasks
     ├── home/                        # All roadmaps list
-    ├── details/                     # Week tabs, Start/Edit/Delete
+    ├── details/                     # Week tabs, lazy expansion, Pause/Resume, Start/Edit/Delete
     ├── create/                      # AI generation form
-    ├── importroadmap/               # File import form
-    ├── topic/                       # Topic detail + Mark Complete
+    ├── importroadmap/               # File upload + paste-text tabs, AI standardization
+    ├── topic/                       # Topic detail + IN_PROGRESS auto-state + AI resources
+    ├── quiz/                        # MCQ quiz screen (generate + cache + retake)
     ├── settings/                    # API key, study hours
-    └── notes/                       # Multi-note list + FAB dialog
+    └── notes/                       # Multi-note list + add/edit FAB dialog
 ```
 
 ---
@@ -299,13 +312,14 @@ Set your maximum study hours per day in **Settings**. When creating a new roadma
 3. Gemini 1.5 Flash generates a JSON skeleton parsed into milestones.
 4. Roadmap is saved in `NOT_YET_STARTED` state.
 
-### Importing from File
+### Importing from File or Pasting Text
 1. Tap **Import** on the Roadmaps screen.
-2. Select a `.txt` file and fill in the Title, Hours, Duration, and Level.
-3. `RoadmapTextParser` identifies `=== WEEK N ===` headers and `Day N:` entries.
-4. Weeks and daily topics are saved to the database automatically.
+2. Choose **Upload File** to pick a `.txt` file, or **Paste Text** to directly paste your roadmap content.
+3. Fill in Title, Hours/Day, Duration, and Experience Level.
+4. Gemini AI standardizes the raw input into a structured week/day skeleton — so both hand-written and AI-generated formats are supported.
+5. Weeks and daily topics are saved to the database automatically.
 
-#### Supported `.txt` Format
+#### Supported Input Format (File or Paste)
 
 ```
 ======================== WEEK 1 ========================
@@ -320,7 +334,7 @@ Day 9: Advanced Binary Search
 ...
 ```
 
-> The parser handles **line-wrapped** content and **multiple days on one line** using marker-position splitting.
+> The AI standardization step means even loosely structured plain-text roadmaps will be correctly parsed into milestones and daily tasks.
 
 ---
 
@@ -350,20 +364,20 @@ Notes are stored in the `notes` Room table with the following design decisions:
 
 ## Database Schema
 
-Room database (`LearningDatabase`, version 1):
+Room database (`LearningDatabase`, version 3):
 
 | Table | Key Fields |
 |---|---|
-| `roadmaps` | `id`, `title`, `goal`, `duration`, `experienceLevel`, `hoursPerDay`, `status`, `startedAt`, `createdAt` |
+| `roadmaps` | `id`, `title`, `goal`, `duration`, `experienceLevel`, `hoursPerDay`, `status`, `startedAt`, `pausedAt`, `createdAt` |
 | `milestones` | `id`, `roadmapId`, `weekNumber`, `title`, `summary`, `expansionStatus` |
 | `curriculum_items` | `id`, `roadmapId`, `milestoneId`, `dayNumber`, `topic`, `description`, `estimatedTime`, `status` |
 | `notes` | `id`, `roadmapId`, `curriculumItemId` (nullable), `dayDate`, `title`, `content`, `createdAt`, `updatedAt` |
 | `users` | `id`, `username`, `passwordHash`, `salt`, `createdAt` |
-| `quiz_questions` | `id`, `roadmapId`, `question`, `answer` |
+| `quiz_questions` | `id`, `curriculumItemId`, `question`, `options`, `correctAnswer` |
 | `streak_logs` | `id`, `date`, `wasActive` |
 | `review_schedules` | `id`, `itemId`, `nextReviewDate` |
 
-> Schema changes require `.\gradlew clean` — `fallbackToDestructiveMigration()` wipes and recreates the DB on version mismatch.
+> Schema changes require `.\gradlew clean` — `fallbackToDestructiveMigration()` wipes and recreates the DB on version mismatch. The database is currently at **version 3**, bumped to add `QuizDao` for quiz question persistence.
 
 ---
 
@@ -373,13 +387,12 @@ Room database (`LearningDatabase`, version 1):
 Created / Imported
         │
         ▼
- NOT_YET_STARTED ── Tap "Start Roadmap" ──▶ ACTIVE
-                                                │
-                               Tasks appear on Dashboard Calendar
-                                                │
-                               Mark individual tasks as COMPLETED
-                                                │
-                                     (Planned) ──▶ ARCHIVED
+ NOT_YET_STARTED ── Tap "Start" ──▶ ACTIVE ◀── Resume ── PAUSED (hides tasks, shifts dates)
+                                      │
+                                      ▼
+                               Mark Complete
+                                      │
+                                  (Planned) ──▶ ARCHIVED
 ```
 
 ---
@@ -414,20 +427,22 @@ Gemini 1.5 Flash integrated via direct REST API using OkHttp. Structured JSON re
 | AI roadmap generation (Pass 1 milestone skeleton) | ✅ Done |
 | File import with `RoadmapTextParser` | ✅ Done |
 | Hours-per-day validation across active courses | ✅ Done |
-| Roadmap `NOT_YET_STARTED` → `ACTIVE` lifecycle | ✅ Done |
+| Roadmap starting, pausing, and resuming with automatic calendar shift logic | ✅ Done |
 | Edit and Delete roadmaps | ✅ Done |
 | Task completion persisted to database | ✅ Done |
 
-### 🔜 Phase 3 — Curriculum Expansion & Full Study Loop (Next)
-The current AI integration only generates **milestone skeletons** (Pass 1). Phase 3 implements the full daily curriculum expansion.
+### ✅ Phase 3 — Curriculum Expansion (Complete)
+Full lazy curriculum expansion, AI-generated quizzes, resource recommendations, and CurriculumItem state machine are all implemented.
 
-| Feature | Plan |
+| Feature | Status |
 |---|---|
-| **Pass 2: Lazy Weekly Expansion** | When a user opens a Week tab, trigger a Gemini call to expand that week into full `CurriculumItem` records with descriptions, resources, and estimated times |
-| **Resource recommendations** | Parse and display links/books/tutorials per topic |
-| **Quiz generation** | On-demand Gemini call to generate `QuizDto` for a completed topic |
-| **Quiz UI** | Multiple-choice quiz screen wired to `QuizQuestionEntity` |
-| **Full `CurriculumItem` state machine** | `NOT_STARTED` → `IN_PROGRESS` → `COMPLETED` / `SKIPPED` with timestamps |
+| **Pass 2: Lazy Weekly Expansion** | ✅ Done — Gemini expands a week when its tab is first opened |
+| **Expansion status tracking** | ✅ Done — `PENDING` → `EXPANDING` → `EXPANDED` per milestone |
+| **Retry on failure** | ✅ Done — Error card with a Retry button on expansion failure |
+| **Resource recommendations** | ✅ Done — Gemini generates 4 curated resources (VIDEO/DOCS/PRACTICE/ARTICLE) per topic, displayed as tappable chips that open in browser |
+| **Quiz generation** | ✅ Done — On-demand Gemini call generates 5 MCQ questions per topic; cached in Room so no re-generation on revisit |
+| **Quiz UI** | ✅ Done — Per-question card with 4 colour-coded options, correct/wrong reveal, score screen with breakdown, Retake and Back actions |
+| **Full `CurriculumItem` state machine** | ✅ Done — `NOT_STARTED` → `IN_PROGRESS` (auto on open) → `COMPLETED` (Mark as Complete button) |
 
 ### 🔜 Phase 4 — Streaks, Spaced Repetition & Notifications
 Habit-forming retention mechanics. The `StreakLogEntity` and `ReviewScheduleEntity` tables are already in the schema, ready to be activated.

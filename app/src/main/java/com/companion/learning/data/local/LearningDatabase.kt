@@ -6,6 +6,7 @@ import com.companion.learning.data.local.dao.RoadmapDao
 import com.companion.learning.data.local.dao.CurriculumDao
 import com.companion.learning.data.local.dao.UserDao
 import com.companion.learning.data.local.dao.NoteDao
+import com.companion.learning.data.local.dao.QuizDao
 import com.companion.learning.data.local.entity.*
 
 @Database(
@@ -19,7 +20,7 @@ import com.companion.learning.data.local.entity.*
         ReviewScheduleEntity::class,
         UserEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class LearningDatabase : RoomDatabase() {
@@ -27,4 +28,5 @@ abstract class LearningDatabase : RoomDatabase() {
     abstract val curriculumDao: CurriculumDao
     abstract val userDao: UserDao
     abstract val noteDao: NoteDao
+    abstract val quizDao: QuizDao
 }

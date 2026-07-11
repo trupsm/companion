@@ -78,6 +78,7 @@ class CreateRoadmapViewModel @Inject constructor(
                     schemaVersion = 1,
                     status = "NOT_YET_STARTED",
                     startedAt = null,
+                    pausedAt = null,
                     createdAt = System.currentTimeMillis()
                 )
                 
@@ -115,6 +116,7 @@ class CreateRoadmapViewModel @Inject constructor(
             schemaVersion = 1,
             status = "NOT_YET_STARTED",
             startedAt = null,
+            pausedAt = null,
             createdAt = System.currentTimeMillis()
         )
 

@@ -7,6 +7,7 @@ import com.companion.learning.data.local.dao.RoadmapDao
 import com.companion.learning.data.local.dao.CurriculumDao
 import com.companion.learning.data.local.dao.UserDao
 import com.companion.learning.data.local.dao.NoteDao
+import com.companion.learning.data.local.dao.QuizDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -47,5 +48,10 @@ object DatabaseModule {
     @Provides
     fun provideNoteDao(database: LearningDatabase): NoteDao {
         return database.noteDao
+    }
+
+    @Provides
+    fun provideQuizDao(database: LearningDatabase): QuizDao {
+        return database.quizDao
     }
 }
