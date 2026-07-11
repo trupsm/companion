@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.companion.learning.data.local.entity.CurriculumItemEntity
 import com.companion.learning.data.local.entity.RoadmapEntity
 import com.companion.learning.data.local.security.SecureStorage
+import com.companion.learning.data.local.LearningDatabase
 import com.companion.learning.domain.repository.CurriculumRepository
 import com.companion.learning.domain.repository.RoadmapRepository
+import com.companion.learning.domain.repository.StreakRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -28,10 +30,13 @@ data class DashboardUiState(
     val selectedDate: LocalDate = LocalDate.now(),
     val activeRoadmaps: List<RoadmapEntity> = emptyList(),
     val tasksForSelectedDate: List<CurriculumItemEntity> = emptyList(),
-    // dates that have ≥1 pending/incomplete task (for dot indicators on calendar)
     val datesWithPendingTasks: Set<LocalDate> = emptySet(),
     val analytics: AnalyticsData = AnalyticsData(),
     val todayProgress: Float = 0f,   // 0..1 fraction of today's tasks completed
+    val streakCount: Int = 0,
+    val availableGraceDays: Int = 0,
+    val hasStudiedToday: Boolean = false,
+    val isGraceDayLoggedToday: Boolean = false,
     val isLoading: Boolean = true
 )
 
@@ -39,7 +44,9 @@ data class DashboardUiState(
 class DashboardViewModel @Inject constructor(
     private val secureStorage: SecureStorage,
     private val roadmapRepository: RoadmapRepository,
-    private val curriculumRepository: CurriculumRepository
+    private val curriculumRepository: CurriculumRepository,
+    private val streakRepository: StreakRepository,
+    private val database: LearningDatabase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState(username = secureStorage.getUsername()))
@@ -56,9 +63,10 @@ class DashboardViewModel @Inject constructor(
 
     fun refreshUsername() {
         _uiState.update { it.copy(username = secureStorage.getUsername()) }
+        loadStreakAndGrace()
     }
 
-    private fun loadData() {
+    fun loadData() {
         viewModelScope.launch {
             roadmapRepository.getAllRoadmaps().collectLatest { roadmaps ->
                 val active = roadmaps.filter { it.status == "ACTIVE" }
@@ -67,6 +75,37 @@ class DashboardViewModel @Inject constructor(
                 }
                 computeAnalyticsAndPendingDates(active)
                 updateTasksForDate(_uiState.value.selectedDate, active)
+                loadStreakAndGrace()
+            }
+        }
+    }
+
+    private fun loadStreakAndGrace() {
+        viewModelScope.launch {
+            val streak = streakRepository.getActiveStreak()
+            val graceDays = streakRepository.getAvailableGraceDays()
+            val todayStr = LocalDate.now().toString()
+            val logToday = database.streakDao.getLogForDate(todayStr)
+            
+            val hasStudied = logToday != null && !logToday.isGraceDay
+            val isGraceDay = logToday != null && logToday.isGraceDay
+            
+            _uiState.update {
+                it.copy(
+                    streakCount = streak,
+                    availableGraceDays = graceDays,
+                    hasStudiedToday = hasStudied,
+                    isGraceDayLoggedToday = isGraceDay
+                )
+            }
+        }
+    }
+
+    fun claimGraceDay() {
+        viewModelScope.launch {
+            val success = streakRepository.claimGraceDayToday()
+            if (success) {
+                loadStreakAndGrace()
             }
         }
     }
@@ -96,7 +135,6 @@ class DashboardViewModel @Inject constructor(
                         overdue++
                         pendingDates.add(itemDate)
                     }
-                    // Also mark today if not completed
                     if (itemDate == today && item.status != "COMPLETED") {
                         pendingDates.add(itemDate)
                     }

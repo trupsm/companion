@@ -33,4 +33,10 @@ abstract class RepositoryModule {
     abstract fun bindQuizRepository(
         quizRepositoryImpl: QuizRepositoryImpl
     ): QuizRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindStreakRepository(
+        streakRepositoryImpl: com.companion.learning.data.repository.StreakRepositoryImpl
+    ): com.companion.learning.domain.repository.StreakRepository
 }

@@ -50,4 +50,36 @@ class SecureStorage @Inject constructor(
     fun getUsername(): String {
         return sharedPreferences.getString("USERNAME", "Learner") ?: "Learner"
     }
+
+    fun getAvailableGraceDays(): Int {
+        return sharedPreferences.getInt("AVAILABLE_GRACE_DAYS", -1)
+    }
+
+    fun setAvailableGraceDays(count: Int) {
+        sharedPreferences.edit().putInt("AVAILABLE_GRACE_DAYS", count).apply()
+    }
+
+    fun isStudyReminderEnabled(): Boolean {
+        return sharedPreferences.getBoolean("STUDY_REMINDER_ENABLED", true)
+    }
+
+    fun setStudyReminderEnabled(enabled: Boolean) {
+        sharedPreferences.edit().putBoolean("STUDY_REMINDER_ENABLED", enabled).apply()
+    }
+
+    fun getStudyReminderHour(): Int {
+        return sharedPreferences.getInt("STUDY_REMINDER_HOUR", 9)
+    }
+
+    fun setStudyReminderHour(hour: Int) {
+        sharedPreferences.edit().putInt("STUDY_REMINDER_HOUR", hour).apply()
+    }
+
+    fun getStudyReminderMinute(): Int {
+        return sharedPreferences.getInt("STUDY_REMINDER_MINUTE", 0)
+    }
+
+    fun setStudyReminderMinute(minute: Int) {
+        sharedPreferences.edit().putInt("STUDY_REMINDER_MINUTE", minute).apply()
+    }
 }
