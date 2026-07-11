@@ -93,6 +93,11 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun continueAsGuest() {
+        secureStorage.saveUsername("Guest")
+        _state.value = AuthState.Success
+    }
+
     fun resetState() {
         _state.value = AuthState.Idle
     }

@@ -150,6 +150,16 @@ fun AuthScreen(
                     Text(if (isLoginTab) "Login" else "Sign Up")
                 }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedButton(
+                onClick = { viewModel.continueAsGuest() },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = state !is AuthState.Loading
+            ) {
+                Text("Continue as Guest")
+            }
         }
     }
 }
