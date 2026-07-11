@@ -12,4 +12,7 @@ interface RoadmapRepository {
     suspend fun deleteRoadmap(id: String)
     suspend fun updateRoadmap(id: String, title: String, goal: String)
     suspend fun startRoadmap(id: String, startedAt: Long)
+    suspend fun pauseRoadmap(id: String)
+    suspend fun resumeRoadmap(id: String)
+    suspend fun updateMilestoneExpansionStatus(milestoneId: String, status: String)
 }
