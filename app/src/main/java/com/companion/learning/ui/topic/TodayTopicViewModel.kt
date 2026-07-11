@@ -64,6 +64,10 @@ class TodayTopicViewModel @Inject constructor(
             streakRepository.recordStudySessionToday()
             val item = curriculumRepository.getCurriculumItemById(topicId)
             if (item != null) {
+                val roadmap = roadmapRepository.getRoadmap(item.roadmapId)
+                if (roadmap != null && roadmap.status == "NOT_YET_STARTED") {
+                    roadmapRepository.startRoadmap(item.roadmapId, System.currentTimeMillis())
+                }
                 _uiState.update { it.copy(item = item) }
             }
         }

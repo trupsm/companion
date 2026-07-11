@@ -1,7 +1,14 @@
 package com.companion.learning.ui.navigation
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
@@ -9,8 +16,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -36,6 +47,7 @@ import java.net.URLEncoder
 sealed class Screen(val route: String, val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     object Dashboard : Screen("dashboard", "Dashboard", Icons.Default.Home)
     object Roadmaps : Screen("home", "Roadmaps", Icons.Default.Book)
+    object AI : Screen("coming_soon", "AI Mentor", Icons.Default.AutoAwesome)
     object Settings : Screen("settings", "Settings", Icons.Default.Settings)
 }
 
@@ -53,6 +65,7 @@ fun AppNavigation() {
     val items = listOf(
         Screen.Dashboard,
         Screen.Roadmaps,
+        Screen.AI,
         Screen.Settings
     )
 
@@ -167,6 +180,63 @@ fun AppNavigation() {
                         val encodedGoal = URLEncoder.encode(roadmapGoal, "UTF-8")
                         navController.navigate("topic/$topicId?goal=$encodedGoal")
                     }
+                )
+            }
+            composable("coming_soon") {
+                ComingSoonScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ComingSoonScreen(onNavigateBack: () -> Unit) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("AI Mentor Mode") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(24.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AutoAwesome,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(72.dp)
+                )
+                Text(
+                    text = "Coming Soon !!!!",
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "AI Mentor Mode (Version 2) will feature a fully autonomous Agentic AI ecosystem to guide, quiz, and plan your learning journey proactively.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
