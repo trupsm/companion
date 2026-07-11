@@ -54,4 +54,9 @@ object DatabaseModule {
     fun provideQuizDao(database: LearningDatabase): QuizDao {
         return database.quizDao
     }
+
+    @Provides
+    fun provideStreakDao(database: LearningDatabase): com.companion.learning.data.local.dao.StreakDao {
+        return database.streakDao
+    }
 }

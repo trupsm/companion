@@ -29,4 +29,5 @@ abstract class LearningDatabase : RoomDatabase() {
     abstract val userDao: UserDao
     abstract val noteDao: NoteDao
     abstract val quizDao: QuizDao
+    abstract val streakDao: com.companion.learning.data.local.dao.StreakDao
 }

@@ -1,5 +1,6 @@
 package com.companion.learning.ui.dashboard
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -11,7 +12,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.companion.learning.data.local.entity.CurriculumItemEntity
@@ -42,9 +46,29 @@ fun DashboardScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text("Welcome back,", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(uiState.username, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text("Welcome back,", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(uiState.username, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        }
+                        if (uiState.streakCount > 0) {
+                            Row(
+                                modifier = Modifier
+                                    .padding(end = 16.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(MaterialTheme.colorScheme.errorContainer)
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(Icons.Default.LocalFireDepartment, contentDescription = "Streak", tint = Color(0xFFFF5722), modifier = Modifier.size(20.dp))
+                                Text("${uiState.streakCount} days", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onErrorContainer)
+                            }
+                        }
                     }
                 }
             )
@@ -63,6 +87,17 @@ fun DashboardScreen(
                     progress = uiState.todayProgress,
                     completed = uiState.analytics.completedTasks,
                     total = uiState.analytics.totalTasks
+                )
+            }
+
+            // ── Streak & Grace Days Card ──────────────────────────
+            item {
+                StreakGraceCard(
+                    streakCount = uiState.streakCount,
+                    graceDays = uiState.availableGraceDays,
+                    hasStudiedToday = uiState.hasStudiedToday,
+                    isGraceDayLogged = uiState.isGraceDayLoggedToday,
+                    onClaimGraceDay = { viewModel.claimGraceDay() }
                 )
             }
 
@@ -139,7 +174,7 @@ fun DashboardScreen(
                         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Icon(Icons.Default.Book, contentDescription = null, modifier = Modifier.size(40.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text("No tasks scheduled for this day.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("Relax or review completed topics!", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
+                            Text("Relax or write down some notes!", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
                         }
                     }
                 }
@@ -188,6 +223,97 @@ fun TodayProgressCard(progress: Float, completed: Int, total: Int) {
                 color = MaterialTheme.colorScheme.primary,
                 trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.15f)
             )
+        }
+    }
+}
+
+@Composable
+fun StreakGraceCard(
+    streakCount: Int,
+    graceDays: Int,
+    hasStudiedToday: Boolean,
+    isGraceDayLogged: Boolean,
+    onClaimGraceDay: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text("Daily Learning Streak", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Study daily to keep your streak alive!", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Icon(
+                    Icons.Default.LocalFireDepartment,
+                    contentDescription = null,
+                    tint = if (streakCount > 0) Color(0xFFFF5722) else MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.size(36.dp)
+                )
+            }
+
+            Divider()
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Default.Shield, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(24.dp))
+                    Column {
+                        Text("Available Grace Days", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                        Text("$graceDays / 3 active protection days", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                
+                // Status / Claim button
+                when {
+                    hasStudiedToday -> {
+                        Text(
+                            "Today Logged! 🔥",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    isGraceDayLogged -> {
+                        Text(
+                            "Grace Day Applied 🛡️",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                    graceDays > 0 -> {
+                        Button(
+                            onClick = onClaimGraceDay,
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                        ) {
+                            Text("Use Grace Day")
+                        }
+                    }
+                    else -> {
+                        Text(
+                            "0 Grace Days left",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+            if (!hasStudiedToday && !isGraceDayLogged) {
+                Text(
+                    text = "*Earn 1 Grace Day (max 3) for every 7 days streak milestone you hit!",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                )
+            }
         }
     }
 }
@@ -256,18 +382,20 @@ fun CalendarDayCard(
             verticalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier.fillMaxHeight()
         ) {
-            Text(dayName.uppercase(), style = MaterialTheme.typography.labelSmall, color = contentColor.copy(alpha = if (isSelected) 0.9f else 0.6f), fontWeight = FontWeight.Bold)
-            Text(dayNumber, style = MaterialTheme.typography.titleMedium, color = contentColor, fontWeight = FontWeight.Bold)
-            // Pending dot indicator
-            Box(
-                modifier = Modifier
-                    .size(6.dp)
-                    .clip(CircleShape)
-                    .background(
-                        if (hasPendingIndicator && !isSelected) MaterialTheme.colorScheme.error
-                        else Color.Transparent
-                    )
-            )
+            Text(dayName, style = MaterialTheme.typography.labelSmall, color = contentColor.copy(alpha = 0.8f))
+            Text(dayNumber, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = contentColor)
+            
+            // Dot indicator for pending tasks
+            if (hasPendingIndicator) {
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .clip(CircleShape)
+                        .background(if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary)
+                )
+            } else {
+                Spacer(modifier = Modifier.size(6.dp))
+            }
         }
     }
 }
@@ -275,52 +403,45 @@ fun CalendarDayCard(
 @Composable
 fun TaskItemCard(
     task: CurriculumItemEntity,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onClick: () -> Unit
 ) {
     val isCompleted = task.status == "COMPLETED"
-    val isOverdue = task.status != "COMPLETED"
-
     Card(
-        modifier = modifier.fillMaxWidth().clickable(onClick = onClick),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
-            containerColor = when {
-                isCompleted -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                else -> MaterialTheme.colorScheme.surface
-            }
+            containerColor = if (isCompleted)
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            else
+                MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (isCompleted) 0.dp else 2.dp)
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Icon(
                 imageVector = if (isCompleted) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
-                contentDescription = if (isCompleted) "Completed" else "Pending",
+                contentDescription = null,
                 tint = if (isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = task.topic,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = if (isCompleted) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface
                 )
-                task.description?.let {
-                    Text(text = it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
-                }
-                if (!isCompleted) {
-                    Text(
-                        text = task.status.replace("_", " "),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.tertiary
-                    )
-                }
-            }
-            task.estimatedTime?.let {
-                Text(text = "${it}m", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                Text(
+                    text = "Day ${task.dayNumber}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

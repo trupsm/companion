@@ -444,38 +444,38 @@ Full lazy curriculum expansion, AI-generated quizzes, resource recommendations, 
 | **Quiz UI** | ✅ Done — Per-question card with 4 colour-coded options, correct/wrong reveal, score screen with breakdown, Retake and Back actions |
 | **Full `CurriculumItem` state machine** | ✅ Done — `NOT_STARTED` → `IN_PROGRESS` (auto on open) → `COMPLETED` (Mark as Complete button) |
 
-### 🔜 Phase 4 — Streaks, Spaced Repetition & Notifications
-Habit-forming retention mechanics. The `StreakLogEntity` and `ReviewScheduleEntity` tables are already in the schema, ready to be activated.
+### ✅ Phase 4 — Streaks & Reminders (Complete)
+Habit-forming retention mechanics. (Note: Spaced repetition scheduling and background WorkManager review checks were skipped per user preference to streamline core retention).
 
-| Feature | Plan |
+| Feature | Status |
 |---|---|
-| **Daily study streak** | Log `StreakLogEntity` on topic completion; calculate streak count; handle timezone boundaries and grace days |
-| **Spaced repetition scheduling** | Auto-schedule review sessions at Day 3, 7, 30 after completion; mark `ORPHANED` if topic is deleted |
-| **Daily reminder notifications** | `AlarmManager` for user-configured exact-time notifications |
-| **Background review alerts** | `WorkManager` job to notify when spaced repetition reviews are due |
+| **Daily study streak** | ✅ Done — Log `StreakLogEntity` on topic completion; calculate active streak; handle grace day protection and milestone rewards |
+| **Spaced repetition scheduling** | ⏩ Skipped (Explicitly skipped by user) |
+| **Daily reminder notifications** | ✅ Done — `AlarmManager` exact-time reminders, containing custom messages with motivational quotes and today's task summaries |
+| **Background review alerts** | ⏩ Skipped (Explicitly skipped by user) |
 
-### 🔜 Phase 5 — Multi-Provider, Resilience & Polish
-| Feature | Plan |
-|---|---|
-| **Additional LLM providers** | Add Claude / OpenAI by implementing the `LlmProvider` interface — no core code changes needed |
-| **Network resilience** | Exponential backoff, rate-limit queue via `WorkManager` |
-| **MCP seam** | Add `callTool(ToolCallRequest)` stub to `LlmProvider` to prepare for multi-agent Model Context Protocol workflows |
-| **Diagnostics panel** | Hidden Settings option to view raw LLM JSON responses for debugging |
-| **Logout** | Clear username from `SecureStorage` and route to Auth screen |
-| **Animations & theming** | Polish transitions, dark mode variants, custom typography |
+### 🌐 Future Enhancements: AI Mentor Mode (Version 2) & MCP
 
-### 🌐 Post-Version 1 — Future Vision
-As defined in the original architecture plan, these features are explicitly out of scope for Version 1 but the architecture is designed to support them without a rewrite:
+To evolve the application from an AI-assisted tool into an autonomous agentic system, **AI Mentor Mode (Version 2)** will implement a multi-agent orchestration pattern coordinated by a central coordinator:
 
-| Feature | Why the Architecture Supports It |
-|---|---|
-| **MCP (Model Context Protocol)** | `LlmProvider.callTool()` seam is ready; MCP servers plug into it |
-| **Multi-agent AI workflows** | Multiple `LlmProvider` instances can cooperate through the same abstraction |
-| **Automatic resource discovery** | `WorkManager` jobs can run `HEAD` validation checks on AI-generated URLs |
-| **Cloud & cross-device sync** | Room is the single source of truth; a sync adapter or Firebase layer can mirror it |
-| **Certificate & resume builder** | `ARCHIVED` roadmaps + completed `CurriculumItems` form the data foundation |
-| **AI flashcards & interview prep** | `QuizQuestionEntity` already exists; extend with card-style UI |
-| **Learning analytics dashboard** | `StreakLogEntity`, `ReviewScheduleEntity`, and completion timestamps provide the raw data |
-| **Community & shared roadmaps** | The `RoadmapSkeletonDto` + `DayDto` structure is serializable and shareable |
+#### 🤖 Coordinated AI Agent Ecosystem
+* **Learning Planner Agent**: Plans learning paths, estimates study time, splits difficult concepts, and updates roadmaps dynamically based on progress.
+* **Resource Curator Agent**: Searches and selects official documentation, practical labs, repositories, and media adapted to the user's skill level.
+* **Daily Mentor Agent**: Manages daily workloads, tracks study consistency, sends personalized encouragement/reminders, and adjusts schedule for inactivity.
+* **Quiz Coach Agent**: Measures comprehension, dynamically scales MCQ/Scenario-based difficulty, tracks weak concepts, and prepares interview prep.
+* **Revision Planner Agent**: Controls long-term retention using adaptive spaced repetition scheduled around quiz scores and study consistency.
+
+#### 🔄 Cross-Agent Collaboration Loop
+Agents communicate continuously through shared state to dynamically refine the user's curriculum:
+* *Quiz Coach* flags weak concept → *Revision Planner* schedules review → *Learning Planner* updates roadmap → *Daily Mentor* adjusts tomorrow's load → *Resource Curator* injects targeted labs/docs.
+
+#### 🔌 Standardized Model Context Protocol (MCP) Integration
+Integrates standardized MCP servers to allow the AI Agents to orchestrate external resources modularly, including:
+* LLM providers selection
+* YouTube, GitHub, & Document searches
+* Direct interfaces to Hack The Box, TryHackMe, AWS Skill Builder, & Microsoft Learn
+* Auto-generated project recommendations and validation checks on URLs
+
+---
 
 ---
