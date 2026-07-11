@@ -13,20 +13,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.companion.learning.data.local.security.SecureStorage
 import com.companion.learning.ui.home.HomeScreen
 import com.companion.learning.ui.create.CreateRoadmapScreen
 import com.companion.learning.ui.topic.TodayTopicScreen
+import com.companion.learning.ui.quiz.QuizScreen
 import com.companion.learning.ui.notes.NotesScreen
 import com.companion.learning.ui.settings.SettingsScreen
 import com.companion.learning.ui.importroadmap.ImportRoadmapScreen
 import com.companion.learning.ui.details.RoadmapDetailsScreen
 import com.companion.learning.ui.dashboard.DashboardScreen
 import com.companion.learning.ui.auth.AuthScreen
+import java.net.URLDecoder
+import java.net.URLEncoder
 
 sealed class Screen(val route: String, val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     object Dashboard : Screen("dashboard", "Dashboard", Icons.Default.Home)
@@ -78,7 +83,7 @@ fun AppNavigation() {
         }
     ) { innerPadding ->
         NavHost(
-            navController = navController, 
+            navController = navController,
             startDestination = startDestination,
             modifier = Modifier.padding(innerPadding)
         ) {
@@ -93,7 +98,7 @@ fun AppNavigation() {
             }
             composable("dashboard") {
                 DashboardScreen(
-                    onTaskClick = { taskId -> navController.navigate("topic/$taskId") }
+                    onTaskClick = { taskId -> navController.navigate("topic/$taskId?goal=") }
                 )
             }
             composable("home") {
@@ -109,12 +114,35 @@ fun AppNavigation() {
                     onNavigateBack = { navController.popBackStack() }
                 )
             }
-            composable("topic/{id}") {
+            // topic/{id}?goal={goal} — optional goal query param for resource recommendations
+            composable(
+                route = "topic/{id}?goal={goal}",
+                arguments = listOf(
+                    navArgument("id") { type = NavType.StringType },
+                    navArgument("goal") {
+                        type = NavType.StringType
+                        defaultValue = ""
+                        nullable = true
+                    }
+                )
+            ) { backStack ->
+                val rawGoal = backStack.arguments?.getString("goal") ?: ""
+                val goal = try { URLDecoder.decode(rawGoal, "UTF-8") } catch (_: Exception) { rawGoal }
+                val topicId = backStack.arguments?.getString("id") ?: ""
                 TodayTopicScreen(
                     onNavigateBack = { navController.popBackStack() },
                     onOpenNotes = { navController.navigate("notes") },
-                    onTakeQuiz = { /* Quiz coming in Phase 3 */ },
-                    onMarkComplete = { navController.popBackStack() }
+                    onTakeQuiz = { navController.navigate("quiz/$topicId") },
+                    onMarkComplete = { navController.popBackStack() },
+                    roadmapGoal = goal
+                )
+            }
+            composable(
+                route = "quiz/{id}",
+                arguments = listOf(navArgument("id") { type = NavType.StringType })
+            ) {
+                QuizScreen(
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
             composable("notes") {
@@ -135,7 +163,10 @@ fun AppNavigation() {
             composable("roadmap_details/{id}") {
                 RoadmapDetailsScreen(
                     onNavigateBack = { navController.popBackStack() },
-                    onTopicClick = { topicId -> navController.navigate("topic/$topicId") }
+                    onTopicClick = { topicId, roadmapGoal ->
+                        val encodedGoal = URLEncoder.encode(roadmapGoal, "UTF-8")
+                        navController.navigate("topic/$topicId?goal=$encodedGoal")
+                    }
                 )
             }
         }

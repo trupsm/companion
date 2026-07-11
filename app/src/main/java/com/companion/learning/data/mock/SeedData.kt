@@ -22,6 +22,7 @@ object SeedData {
         schemaVersion = 1,
         status = "ACTIVE",
         startedAt = System.currentTimeMillis() - (7 * 24 * 60 * 60 * 1000L), // started 7 days ago
+        pausedAt = null,
         createdAt = System.currentTimeMillis() - (7 * 24 * 60 * 60 * 1000L)
     )
 

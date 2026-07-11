@@ -31,6 +31,9 @@ interface RoadmapDao {
     @Query("UPDATE roadmaps SET title = :title, goal = :goal WHERE id = :id")
     suspend fun updateRoadmapDetails(id: String, title: String, goal: String)
 
-    @Query("UPDATE roadmaps SET status = :status, startedAt = :startedAt WHERE id = :id")
-    suspend fun updateRoadmapLifecycle(id: String, status: String, startedAt: Long)
+    @Query("UPDATE roadmaps SET status = :status, startedAt = :startedAt, pausedAt = :pausedAt WHERE id = :id")
+    suspend fun updateRoadmapLifecycle(id: String, status: String, startedAt: Long?, pausedAt: Long?)
+
+    @Query("UPDATE milestones SET expansionStatus = :status WHERE id = :id")
+    suspend fun updateMilestoneStatus(id: String, status: String)
 }

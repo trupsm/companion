@@ -13,7 +13,8 @@ data class RoadmapEntity(
     val hoursPerDay: Int,
     val llmProviderId: String,
     val schemaVersion: Int,
-    val status: String, // GENERATING_SKELETON, NOT_YET_STARTED, ACTIVE, ARCHIVED
+    val status: String, // GENERATING_SKELETON, NOT_YET_STARTED, ACTIVE, PAUSED, ARCHIVED
     val startedAt: Long?,
+    val pausedAt: Long?,
     val createdAt: Long
 )

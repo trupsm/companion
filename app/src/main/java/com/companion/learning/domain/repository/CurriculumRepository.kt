@@ -9,4 +9,5 @@ interface CurriculumRepository {
     fun getCurriculumItemsForRoadmap(roadmapId: String): Flow<List<CurriculumItemEntity>>
     suspend fun getCurriculumItemById(id: String): CurriculumItemEntity?
     suspend fun updateCurriculumItemStatus(id: String, status: String)
+    suspend fun markTopicInProgress(id: String)
 }
