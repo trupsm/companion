@@ -446,9 +446,16 @@ Full lazy curriculum expansion, AI-generated quizzes, resource recommendations, 
 
 ### ✅ Phase 4 — Streaks & Reminders (Complete)
 Habit-forming retention mechanics. (Note: Spaced repetition scheduling and background WorkManager review checks were skipped per user preference to streamline core retention).
+### ✅ Phase 4 — Streaks & Reminders (Complete)
+Habit-forming retention mechanics. (Note: Spaced repetition scheduling and background WorkManager review checks were skipped per user preference to streamline core retention).
 
 | Feature | Status |
+| Feature | Status |
 |---|---|
+| **Daily study streak** | ✅ Done — Log `StreakLogEntity` on topic completion; calculate active streak; handle grace day protection and milestone rewards |
+| **Spaced repetition scheduling** | ⏩ Skipped (Explicitly skipped by user) |
+| **Daily reminder notifications** | ✅ Done — `AlarmManager` exact-time reminders, containing custom messages with motivational quotes and today's task summaries |
+| **Background review alerts** | ⏩ Skipped (Explicitly skipped by user) |
 | **Daily study streak** | ✅ Done — Log `StreakLogEntity` on topic completion; calculate active streak; handle grace day protection and milestone rewards |
 | **Spaced repetition scheduling** | ⏩ Skipped (Explicitly skipped by user) |
 | **Daily reminder notifications** | ✅ Done — `AlarmManager` exact-time reminders, containing custom messages with motivational quotes and today's task summaries |

@@ -22,6 +22,9 @@ interface RoadmapDao {
     @Query("SELECT * FROM roadmaps")
     fun getAllRoadmaps(): Flow<List<RoadmapEntity>>
 
+    @Query("SELECT * FROM roadmaps WHERE status = 'ACTIVE'")
+    suspend fun getActiveRoadmaps(): List<RoadmapEntity>
+
     @Query("SELECT * FROM milestones WHERE roadmapId = :roadmapId ORDER BY weekNumber")
     fun getMilestonesForRoadmap(roadmapId: String): Flow<List<MilestoneEntity>>
 

@@ -9,6 +9,7 @@ import com.companion.learning.domain.provider.LlmProvider
 import com.companion.learning.domain.repository.CurriculumRepository
 import com.companion.learning.domain.repository.QuizRepository
 import com.companion.learning.domain.repository.RoadmapRepository
+import com.companion.learning.domain.repository.StreakRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,6 +34,7 @@ class TodayTopicViewModel @Inject constructor(
     private val quizRepository: QuizRepository,
     private val llmProvider: LlmProvider,
     private val roadmapRepository: RoadmapRepository,
+    private val streakRepository: StreakRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -59,6 +61,7 @@ class TodayTopicViewModel @Inject constructor(
     fun markTopicCompleted() {
         viewModelScope.launch {
             curriculumRepository.updateCurriculumItemStatus(topicId, "COMPLETED")
+            streakRepository.recordStudySessionToday()
             val item = curriculumRepository.getCurriculumItemById(topicId)
             if (item != null) {
                 _uiState.update { it.copy(item = item) }
